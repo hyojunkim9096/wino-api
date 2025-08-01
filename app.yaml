@@ -1,0 +1,10 @@
+runtime: java21
+instance_class: F1
+
+env_variables:
+  SPRING_PROFILES_ACTIVE: prod
+  SPRING_DATASOURCE_URL: jdbc:mysql://34.64.45.109:3306/wino_db?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+  SPRING_DATASOURCE_USERNAME: root
+  SPRING_DATASOURCE_PASSWORD: Wino1234!
+  AES_SECRET_KEY: 12345678901234567890123456789012
+  JWT_SECRET_KEY: MySuperSecretKeyIsExactly32Byte!
