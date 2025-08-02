@@ -1,5 +1,6 @@
 package com.wino.wino_api.controller.auth;
 
+import com.wino.wino_api.dto.auth.UserLoginRequestDto;
 import com.wino.wino_api.dto.auth.UserSignupRequestDto;
 import com.wino.wino_api.service.user.UserAuthService;
 import lombok.RequiredArgsConstructor;
@@ -26,5 +27,15 @@ public class AuthController {
         log.info("회원가입 요청 : {}", request);
         userAuthService.register(request);
         return ResponseEntity.ok("회원가입 성공");
+    }
+
+    /**
+     * 로그인 API
+     */
+    @PostMapping("/loginCheck")
+    public ResponseEntity<String> login(@RequestBody UserLoginRequestDto request) throws Exception {
+        log.info("로그인 요청 : {}", request);
+        String token = userAuthService.login(request); // JWT 발급 or 로그인 검증
+        return ResponseEntity.ok(token);
     }
 }
