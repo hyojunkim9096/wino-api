@@ -9,6 +9,6 @@ public class MainController {
     @GetMapping("/")
     public String index() {
 
-        return "redirect:/flutter/index.html";
+        return "main/index";
     }
 }

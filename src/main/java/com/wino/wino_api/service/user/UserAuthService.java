@@ -49,7 +49,7 @@ public class UserAuthService {
      * 로그인 처리
      */
     public String login(UserLoginRequestDto request) throws Exception {
-        UserInfo user = userInfoRepository.findByEmail(AES256Util.encrypt(request.getEmail()))
+        UserInfo user = userInfoRepository.findByEmail(AES256Util.encrypt(request.getUserId()))
                 .orElseThrow(() -> new UsernameNotFoundException("존재하지 않는 사용자입니다."));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {

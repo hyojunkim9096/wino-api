@@ -55,11 +55,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/index.html", "/favicon.ico",
-                                "/flutter/**",
-                                "/main.dart.js", "/flutter.js",
-                                "/assets/**",
-                                "/api/auth/**",
-                                "/css/**", "/js/**", "/img/**"
+                                "/main/**",                     // ✅ main 경로 전체 허용
+                                "/signup", "/login",            // 로그인/회원가입 경로도 미리 허용
+                                "/api/auth/**",                 // API 중 인증 없이 필요한 부분
+                                "/css/**", "/js/**", "/img/**", // 정적 리소스 허용
+                                "/assets/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

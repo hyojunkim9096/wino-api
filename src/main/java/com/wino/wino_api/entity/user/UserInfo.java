@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 /**
  * 사용자 정보 엔티티
- * user_info 테이블과 매핑되며 이메일, 비밀번호, 이름, 전화번호 등 기본 정보 저장
+ * user_info 테이블과 매핑되며 로그인 ID, 이름, 닉네임, 연락처, 이메일, 동의 여부 등을 포함
  */
 @Entity
 @Table(name = "user_info")
@@ -28,10 +28,10 @@ public class UserInfo {
     private Long id;
 
     /**
-     * 로그인용 이메일 (중복 불가)
+     * 로그인용 ID (user_id, 중복 불가)
      */
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(name = "user_id", nullable = false, unique = true, length = 30)
+    private String userId;
 
     /**
      * 암호화된 비밀번호
@@ -40,16 +40,34 @@ public class UserInfo {
     private String password;
 
     /**
-     * 사용자 이름
+     * 사용자 실명
      */
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String name;
+
+    /**
+     * 닉네임 (중복 불가)
+     */
+    @Column(nullable = false, unique = true, length = 50)
+    private String nickname;
+
+    /**
+     * 이메일 (선택사항, 중복 불가)
+     */
+    @Column(unique = true, length = 100)
+    private String email;
 
     /**
      * 휴대폰 번호
      */
-    @Column(name = "phone_number", nullable = false)
+    @Column(name = "phone_number", nullable = false, length = 20)
     private String phoneNumber;
+
+    /**
+     * 개인정보 수집 및 이용 동의 여부
+     */
+    @Column(name = "agree_to_privacy_policy", nullable = false)
+    private boolean agreeToPrivacyPolicy;
 
     /**
      * 가입일시 (자동 생성)
