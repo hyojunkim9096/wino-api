@@ -1,0 +1,179 @@
+<!-- src/main/resources/templates/admin/sign/adminSignup.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>신규등록</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+          rel="stylesheet"/>
+
+    <!-- Daum 우편번호 서비스 -->
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+    <!-- 커스텀 스타일 -->
+    <style>
+        body, html { height:100%; margin:0; }
+        body {
+          background:
+            linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+            url('/images/adminLoginBg.png') no-repeat center center fixed;
+          background-size: cover;
+          display:flex; align-items:center; justify-content:center;
+          font-family:"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .signup-card {
+          background-color: rgba(255,255,255,0.9);
+          border:none; border-radius:1rem;
+          box-shadow:0 0.5rem 1rem rgba(0,0,0,0.3);
+          max-width:600px; width:90%; padding:2rem;
+        }
+        .signup-card h4 { font-weight:600; margin-bottom:1.5rem; color:#343a40; }
+        .form-label { font-weight:500; color:#495057; }
+        .form-control { border-radius:0.5rem; padding:0.75rem 1rem; }
+        .btn-primary {
+          background-color:#0062cc; border-color:#005cbf;
+          padding:0.75rem; font-weight:600; border-radius:0.5rem;
+        }
+        .btn-primary:hover {
+          background-color:#005cbf; border-color:#004a9f;
+        }
+        .form-footer a {
+          color:#0062cc; text-decoration:none; font-size:0.9rem;
+        }
+        .form-footer a:hover {
+          text-decoration:underline; color:#004a9f;
+        }
+        .text-danger { font-size:0.85rem; }
+    </style>
+
+    <script th:inline="javascript">
+        function openPostcode() {
+          new daum.Postcode({
+            oncomplete: function(data) {
+              document.getElementById('postalCode').value = data.zonecode;
+              document.getElementById('address').value = data.address;
+              document.getElementById('detailAddress').focus();
+            }
+          }).open();
+        }
+    </script>
+</head>
+<body>
+<div class="signup-card">
+    <div class="text-center"><h4>관리자 신규등록</h4></div>
+    <form th:action="@{/admin/sign/signup}"
+          th:object="${adminSignupDto}"
+          method="post" novalidate>
+
+        <!-- User ID -->
+        <div class="mb-3">
+            <label for="userId" class="form-label">User ID</label>
+            <input type="text" id="userId" th:field="*{userId}"
+                   class="form-control" placeholder="4~50자" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('userId')}"
+                 th:errors="*{userId}"></div>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" th:field="*{password}"
+                   class="form-control" placeholder="8자 이상" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('password')}"
+                 th:errors="*{password}"></div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="mb-3">
+            <label for="confirmPassword" class="form-label">Confirm Password</label>
+            <input type="password" id="confirmPassword" th:field="*{confirmPassword}"
+                   class="form-control" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('confirmPassword')}"
+                 th:errors="*{confirmPassword}"></div>
+        </div>
+
+        <!-- Name -->
+        <div class="mb-3">
+            <label for="userName" class="form-label">이름</label>
+            <input type="text" id="userName" th:field="*{userName}"
+                   class="form-control" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('userName')}"
+                 th:errors="*{userName}"></div>
+        </div>
+
+        <!-- Phone / Emergency Contact -->
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="phoneNumber" class="form-label">핸드폰</label>
+                <input type="text" id="phoneNumber" th:field="*{phoneNumber}"
+                       class="form-control" placeholder="01012345678" required/>
+                <div class="text-danger" th:if="${#fields.hasErrors('phoneNumber')}"
+                     th:errors="*{phoneNumber}"></div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="emergencyContact" class="form-label">비상연락처</label>
+                <input type="text" id="emergencyContact" th:field="*{emergencyContact}"
+                       class="form-control" placeholder="01087654321"/>
+                <div class="text-danger" th:if="${#fields.hasErrors('emergencyContact')}"
+                     th:errors="*{emergencyContact}"></div>
+            </div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" th:field="*{email}"
+                   class="form-control" required/>
+            <div class="text-danger" th:if="${#fields.hasErrors('email')}"
+                 th:errors="*{email}"></div>
+        </div>
+
+        <!-- 우편번호 + 주소 검색 -->
+        <div class="row">
+            <div class="col-4 mb-3">
+                <label for="postalCode" class="form-label">우편번호</label>
+                <div class="input-group">
+                    <input type="text" id="postalCode" th:field="*{postalCode}"
+                           class="form-control" readonly/>
+                    <button type="button" class="btn btn-outline-secondary"
+                            onclick="openPostcode()">검색</button>
+                </div>
+            </div>
+            <div class="col-8 mb-3">
+                <label for="address" class="form-label">주소</label>
+                <input type="text" id="address" th:field="*{address}"
+                       class="form-control" readonly/>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="detailAddress" class="form-label">상세주소</label>
+            <input type="text" id="detailAddress" th:field="*{detailAddress}"
+                   class="form-control"/>
+        </div>
+
+        <!-- Employee Type -->
+        <div class="row">
+            <div class="col-12 mb-3">
+                <label for="employeeType" class="form-label">직원 구분</label>
+                <select id="employeeType" th:field="*{employeeType}"
+                        class="form-select" required>
+                    <option value="" disabled selected>선택하세요</option>
+                    <option value="STAFF">직원</option>
+                    <option value="TEACHER">강사</option>
+                </select>
+                <div class="text-danger" th:if="${#fields.hasErrors('employeeType')}"
+                     th:errors="*{employeeType}"></div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">등록하기</button>
+    </form>
+    <div class="text-center form-footer mt-3">
+        <a th:href="@{/admin/login}">← 로그인으로 돌아가기</a>
+    </div>
+</div>
+</body>
+</html>

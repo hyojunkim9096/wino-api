@@ -1,88 +1,70 @@
+// src/main/java/com/wino/wino_api/security/SecurityConfig.java
 package com.wino.wino_api.security;
 
-import com.wino.wino_api.security.jwt.JwtAuthenticationFilter;
-import com.wino.wino_api.security.jwt.JwtExceptionFilter;
-import com.wino.wino_api.security.jwt.JwtUtil;
-import jakarta.servlet.http.HttpServletResponse;
+import com.wino.wino_api.repository.admin.AdminUserInfoRepository;
+import com.wino.wino_api.security.handler.AdminAuthFailureHandler;
+import com.wino.wino_api.security.handler.AdminAuthSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
 
-/**
- * Spring Security 전체 설정을 담당하는 클래스
- */
 @Configuration
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtUtil jwtUtil;
-
-    /**
-     * JWT 인증 필터 빈 등록
-     */
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtUtil);
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
+        return cfg.getAuthenticationManager();
     }
 
-    /**
-     * JWT 예외 필터 빈 등록
-     */
     @Bean
-    public JwtExceptionFilter jwtExceptionFilter() {
-        return new JwtExceptionFilter();
-    }
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           AdminUserInfoRepository adminRepo) throws Exception {
 
-    /**
-     * Spring Security FilterChain 설정
-     */
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF 보호 비활성화 (JWT 기반 API 서버에선 비활성화)
-                .csrf(csrf -> csrf.disable())
-
-                // 세션 사용하지 않음 (JWT는 무상태 인증 방식)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // 요청 경로별 접근 허용 설정
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/admin/sign/**")
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                )
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/admin/sign/**").permitAll()
                         .requestMatchers(
-                                "/", "/index.html", "/favicon.ico",
-                                "/main/**",                     // ✅ main 경로 전체 허용
-                                "/signup", "/login",            // 로그인/회원가입 경로도 미리 허용
-                                "/api/auth/**",                 // API 중 인증 없이 필요한 부분
-                                "/css/**", "/js/**", "/img/**", // 정적 리소스 허용
-                                "/assets/**"
+                                "/admin/login",
+                                "/favicon.ico",
+                                "/images/**", "/css/**", "/js/**", "/assets/**",
+                                "/", "/index.html", "/error"
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .anyRequest().permitAll()
                 )
-
-                // 로그인/HTTP Basic 비활성화
-                .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable())
-
-                // JWT 관련 필터 등록
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // 인증 필터 실행
-                .addFilterBefore(jwtExceptionFilter(), JwtAuthenticationFilter.class) // 예외 처리 필터 실행
-
-                // 보안 헤더 설정
+                .formLogin(form -> form
+                        .loginPage("/admin/login")
+                        .loginProcessingUrl("/admin/login")
+                        .usernameParameter("userId")
+                        .passwordParameter("password")
+                        .successHandler(new AdminAuthSuccessHandler(adminRepo, "/admin/board/adminMainBoard", true))
+                        .failureHandler(new AdminAuthFailureHandler(adminRepo))
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/admin/logout")
+                        .logoutSuccessUrl("/admin/login?logout")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                )
                 .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
+                        .frameOptions(f -> f.sameOrigin())
                         .addHeaderWriter(new StaticHeadersWriter("X-Content-Type-Options", "nosniff"))
-                )
-
-                // 인증 실패 시 401 Unauthorized 응답
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-                        })
                 );
 
         return http.build();
