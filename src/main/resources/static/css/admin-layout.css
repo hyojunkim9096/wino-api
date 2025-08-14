@@ -1,0 +1,48 @@
+/* ===== Admin Shell Layout (공통 뼈대) ===== */
+#admin-layout{
+  display:grid;
+  grid-template-rows: auto 1fr;        /* 헤더(자동 높이) + 본문 */
+  grid-template-columns: 260px 1fr;    /* 사이드바 + 컨텐츠 */
+  min-height:100svh;
+  background:#f3f6fb;                  /* 컨텐츠 전체 배경 */
+}
+
+/* 헤더는 상단 전체 폭 차지 */
+#admin-header{ grid-column: 1 / -1; }
+
+/* 영역 배치 */
+#admin-sidebar{ grid-row:2; grid-column:1; }
+#admin-content{ grid-row:2; grid-column:2; }
+
+/* 컨텐츠 여백(가로 넉넉하게) */
+#admin-content.container-fluid{
+  padding: 24px 28px 56px;
+}
+
+/* 아주 넓은 화면에선 최대폭을 살짝 제한해 중간 정렬 느낌 */
+@media (min-width: 1600px){
+  #admin-content.container-fluid > *{
+    max-width: 1500px;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+}
+
+/* 접힘 상태 */
+.sidebar-collapsed{ grid-template-columns: 72px 1fr !important; }
+.sidebar-collapsed #admin-sidebar .item-label{ display:none; }
+.sidebar-collapsed #admin-sidebar .nav-link{ justify-content:center; }
+.sidebar-collapsed #admin-sidebar .brand{ font-size:0; }
+
+/* 카드 여백/라운딩 기본화 */
+.card{
+  border:0;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, .06);
+}
+.card-header{
+  border-bottom:1px solid rgba(2,6,23,.06);
+  background: linear-gradient(#fff, #fafbff);
+  font-weight:600;
+  color:#0f172a;
+}

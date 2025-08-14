@@ -1,0 +1,76 @@
+<!-- 좌측 메뉴 프래그먼트 -->
+<aside xmlns:th="http://www.thymeleaf.org"
+       th:fragment="adminLeft"
+       id="admin-sidebar"
+       class="d-flex flex-column p-3">
+    <!-- 브랜드/타이틀 -->
+    <div class="mb-3 text-uppercase small fw-semibold text-white-50 brand">
+        Wino_Project
+    </div>
+
+    <!-- 네비 -->
+    <ul class="nav nav-pills flex-column gap-1">
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-2 text-light"
+               th:classappend="${activeMenu} == 'dashboard' ? ' active' : ''"
+               href="/admin/board/adminMainBoard">
+                <span class="item-icon">🏠</span>
+                <span class="item-label">대시보드</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-2 text-light"
+               th:classappend="${activeMenu} == 'users' ? ' active' : ''"
+               href="/admin/users">
+                <span class="item-icon">👥</span>
+                <span class="item-label">사용자 관리</span>
+            </a>
+        </li>
+
+        <!-- 설정: 드롭다운(접기/펼치기) -->
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center justify-content-between text-light collapsed"
+               data-bs-toggle="collapse"
+               href="#menuSettings"
+               role="button"
+               aria-expanded="false"
+               aria-controls="menuSettings">
+        <span class="d-inline-flex align-items-center gap-2">
+          <span class="item-icon">⚙️</span>
+          <span class="item-label">설정</span>
+        </span>
+                <span class="small">▾</span>
+            </a>
+
+            <div class="collapse"
+                 id="menuSettings"
+                 th:classappend="${#strings.startsWith(activeMenu?:'', 'settings')} ? ' show' : ''">
+                <ul class="nav flex-column ms-4 mt-1 gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link text-light"
+                           th:classappend="${activeMenu} == 'settings' ? ' active' : ''"
+                           href="/admin/settings">설정 홈</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-light"
+                           th:classappend="${activeMenu} == 'settings-common-code' ? ' active' : ''"
+                           href="/admin/settings/common-code">공통코드</a>
+                    </li>
+                    <!-- 필요 시 확장
+                    <li class="nav-item">
+                      <a class="nav-link text-light"
+                         th:classappend="${activeMenu} == 'settings-menus' ? ' active' : ''"
+                         href="/admin/settings/menus">메뉴/권한</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link text-light"
+                         th:classappend="${activeMenu} == 'settings-subjects' ? ' active' : ''"
+                         href="/admin/settings/subjects">과목 설정</a>
+                    </li>
+                    -->
+                </ul>
+            </div>
+        </li>
+    </ul>
+</aside>

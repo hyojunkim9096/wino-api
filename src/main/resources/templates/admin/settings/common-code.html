@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title id="pageTitle">공통코드 관리</title>
+</head>
+
+<body th:replace="~{layout/admin-layout :: layout(
+           ~{::#pageTitle},
+           ~{::#content}
+         )}">
+
+<th:block id="content">
+  <!-- 페이지 전용 CSS -->
+  <link rel="stylesheet" href="/css/pages/common-code.css"/>
+
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="mb-0">설정 &raquo; 공통코드</h5>
+    <div class="toolbar d-flex gap-2">
+      <input id="filterInput" class="form-control form-control-sm" style="width:240px" placeholder="하위 코드 검색 (코드·이름)…"/>
+      <button class="btn btn-sm btn-primary" id="btnAddGroup">
+        <i class="bi bi-plus-lg me-1"></i>상위 추가
+      </button>
+      <button class="btn btn-sm btn-outline-primary" id="btnAddChild" disabled>
+        <i class="bi bi-plus-lg me-1"></i>하위 추가
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- 좌: 상위(정확히 3) -->
+    <div class="col-12 col-left">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">상위 코드</span>
+          <span class="small text-muted">좌측은 그룹만 표시</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive pane">
+            <table class="table table-sm table-hover align-middle mb-0">
+              <thead class="table-light position-sticky top-0">
+              <tr>
+                <th>이름 / 코드</th>
+                <th class="text-end" style="min-width:70px">사용</th>
+              </tr>
+              </thead>
+              <tbody id="tblGroups">
+              <tr th:each="g : ${groups}" class="row-click"
+                  th:data-id="${g.id}"
+                  th:data-code="${g.code}"
+                  th:data-name="${g.codeName}"
+                  th:data-sort="${g.sortOrder} ?: 0"
+                  th:data-use="${g.useYn}">
+                <td>
+                  <div class="d-flex flex-column">
+                    <span class="cc-name" th:text="${g.codeName}">수업관</span>
+                    <span class="cc-code" th:text="${g.code}">WORK_LOCATION</span>
+                  </div>
+                </td>
+                <td class="text-end">
+                  <span class="badge bg-success-subtle text-success" th:if="${g.useYn=='Y'}">Y</span>
+                  <span class="badge bg-secondary-subtle text-secondary" th:if="${g.useYn=='N'}">N</span>
+                </td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(groups)}">
+                <td colspan="2" class="empty-state">
+                  <div class="icon">🧩</div><br/>
+                  상위 코드가 없습니다. <strong>상위 추가</strong> 버튼으로 시작하세요.
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer d-flex gap-2 justify-content-end">
+          <button class="btn btn-sm btn-outline-secondary" id="btnEditGroup" disabled>상위 수정</button>
+          <button class="btn btn-sm btn-outline-danger" id="btnDeleteGroup" disabled>상위 삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 우: 하위(정확히 7) -->
+    <div class="col-12 col-right">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+          <div class="me-2">
+            <span class="fw-semibold" id="selGroupName">그룹 미선택</span>
+            <small id="selGroupCode" class="text-muted ms-2"></small>
+          </div>
+          <div class="text-muted small">
+            <span class="me-2">하위 코드: <span id="childCount">0</span></span>
+            <span class="filter-badge" id="childFilterState" hidden>필터링</span>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive pane">
+            <table class="table table-sm table-hover align-middle mb-0">
+              <thead class="table-light position-sticky top-0">
+              <tr>
+                <th style="min-width:180px">코드</th>
+                <th>이름</th>
+                <th style="min-width:100px">정렬</th>
+                <th style="min-width:90px">사용</th>
+                <th style="min-width:90px">표시</th>
+                <th class="text-end" style="min-width:200px">액션</th>
+              </tr>
+              </thead>
+              <tbody id="tblChildren">
+              <tr>
+                <td colspan="6" class="empty-state">
+                  <div class="icon">👈</div><br/>
+                  좌측에서 상위(그룹)를 선택하세요.
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer small text-muted">
+          정렬/사용은 행의 <strong>저장</strong>으로 즉시 반영, 코드/이름은 <strong>수정</strong> 모달에서 변경하세요.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상위 코드 모달 -->
+  <div class="modal fade" id="groupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" id="groupForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="groupModalLabel">상위 코드</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label">코드</label>
+              <input type="text" class="form-control" id="g_code" maxlength="50" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">정렬</label>
+              <input type="number" class="form-control" id="g_sort" value="0">
+            </div>
+            <div class="col-12">
+              <label class="form-label">코드명</label>
+              <input type="text" class="form-control" id="g_name" maxlength="100" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">사용 여부</label>
+              <select class="form-select" id="g_use">
+                <option value="Y" selected>Y</option>
+                <option value="N">N</option>
+              </select>
+            </div>
+            <input type="hidden" id="g_id">
+            <input type="hidden" id="g_mode" value="create">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+          <button type="submit" class="btn btn-primary">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 하위 코드 모달 -->
+  <div class="modal fade" id="childModal" tabindex="-1" aria-labelledby="childModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form class="modal-content" id="childForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="childModalLabel">하위 코드</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label">코드</label>
+              <input type="text" class="form-control" id="c_code" maxlength="50" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">정렬</label>
+              <input type="number" class="form-control" id="c_sort" value="0">
+            </div>
+            <div class="col-12">
+              <label class="form-label">코드명</label>
+              <input type="text" class="form-control" id="c_name" maxlength="100" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">사용 여부</label>
+              <select class="form-select" id="c_use">
+                <option value="Y" selected>Y</option>
+                <option value="N">N</option>
+              </select>
+            </div>
+            <input type="hidden" id="c_id">
+            <input type="hidden" id="c_mode" value="create">
+            <input type="hidden" id="c_parent">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+          <button type="submit" class="btn btn-primary">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 삭제 확인 -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title">삭제 확인</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+        <div class="modal-body"><div id="confirmText">정말 삭제하시겠습니까?</div></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+          <button type="button" class="btn btn-danger" id="confirmYes">삭제</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1080">
+    <div id="toastBox" class="toast align-items-center text-bg-dark border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMsg">처리되었습니다.</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="닫기"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 스크립트 -->
+  <script>
+    const $ = (s)=>document.querySelector(s);
+    const $$ = (s)=>document.querySelectorAll(s);
+
+    // === API 엔드포인트(한 곳에서 관리) ===
+    const API_BASE = '/admin/settings/common-code/api';
+
+    // CSRF
+    const csrfHdr=document.querySelector('meta[name="_csrf_header"]')?.content;
+    const csrfTok=document.querySelector('meta[name="_csrf"]')?.content;
+    const baseHdr={'Content-Type':'application/json'}; if(csrfHdr&&csrfTok) baseHdr[csrfHdr]=csrfTok;
+
+    let currentGroup=null; // {id, code, name}
+
+    // Bootstrap helpers
+    const toast = new bootstrap.Toast($('#toastBox'), { delay: 1800 });
+    const groupModal = new bootstrap.Modal($('#groupModal'));
+    const childModal = new bootstrap.Modal($('#childModal'));
+    const confirmModal = new bootstrap.Modal($('#confirmModal'));
+    function showToast(msg){ $('#toastMsg').textContent=msg; toast.show(); }
+
+    async function fetchJson(url,opt={}) {
+      opt.headers=Object.assign({},baseHdr,opt.headers||{});
+      opt.credentials='same-origin';
+      const res=await fetch(url,opt);
+      if (!res.ok) {
+        showToast('요청 실패: ' + res.status);
+        throw new Error('HTTP '+res.status);
+      }
+      const ct=res.headers.get('content-type')||'';
+      return ct.includes('application/json') ? res.json() : {};
+    }
+
+    function highlight(tbody,id){
+      tbody.querySelectorAll('tr').forEach(tr=>tr.classList.toggle('active', tr.dataset.id==id));
+    }
+
+    // ===== 상위(좌측) 클릭 - 이벤트 위임으로 안정화 =====
+    $('#tblGroups')?.addEventListener('click', (e)=>{
+      const tr = e.target.closest('tr[data-id]');
+      if(!tr) return;
+      selectGroup(tr.dataset.id);
+    });
+
+    async function selectGroup(id){
+      const row=$(`#tblGroups tr[data-id="${id}"]`); if(!row) return;
+      highlight($('#tblGroups'), id);
+      currentGroup={
+        id: +id,
+        code: row.dataset.code || row.querySelector('.cc-code')?.innerText || '',
+        name: row.dataset.name || row.querySelector('.cc-name')?.innerText || ''
+      };
+      $('#selGroupName').innerText=currentGroup.name;
+      $('#selGroupCode').innerText='('+currentGroup.code+')';
+      $('#btnEditGroup').disabled=false;
+      $('#btnDeleteGroup').disabled=false;
+      $('#btnAddChild').disabled=false;
+
+      await loadChildren(currentGroup.id);
+    }
+
+    async function loadChildren(parentId){
+      // 로딩 표시
+      $('#tblChildren').innerHTML = '<tr><td colspan="6" class="text-center py-4">로딩 중…</td></tr>';
+      try{
+        const items=await fetchJson(`${API_BASE}/${parentId}/children`);
+        renderChildren(items);
+      }catch(err){
+        console.error(err);
+        $('#tblChildren').innerHTML = '<tr><td colspan="6" class="empty-state"><div class="icon">⚠️</div><br/>하위 코드를 불러오지 못했습니다.<br/><small>API 매핑을 확인하세요: '+API_BASE+'/{id}/children</small></td></tr>';
+      }
+    }
+
+    function renderChildren(items){
+      const tb=$('#tblChildren'); tb.innerHTML='';
+      const mkRow=(it)=>`
+        <tr data-id="${it.id}">
+          <td class="fw-semibold">${it.code}</td>
+          <td><span class="cc-name">${it.codeName}</span></td>
+          <td style="max-width:110px"><input type="number" class="form-control form-control-sm" value="${it.sortOrder??0}"></td>
+          <td>
+            <select class="form-select form-select-sm">
+              <option value="Y" ${it.useYn==='Y'?'selected':''}>Y</option>
+              <option value="N" ${it.useYn==='N'?'selected':''}>N</option>
+            </select>
+          </td>
+          <td>${it.delYn==='N'?'표시':'숨김'}</td>
+          <td class="text-end">
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-primary" onclick="openChildEdit(${it.id}, '${(it.code||'').replace(/'/g,"&#39;")}', '${(it.codeName||'').replace(/'/g,"&#39;")}', '${it.useYn}', ${it.sortOrder??0})">수정</button>
+              <button class="btn btn-outline-secondary" onclick="saveChildQuick(${it.id}, this)">저장</button>
+              <button class="btn btn-outline-danger" onclick="confirmDelete('하위 코드를 삭제하시겠습니까?', ()=>delChild(${it.id}))">삭제</button>
+            </div>
+          </td>
+        </tr>`;
+      if(!items || !items.length){
+        tb.innerHTML='<tr><td colspan="6" class="empty-state"><div class="icon">📭</div><br/>하위 코드가 없습니다.</td></tr>';
+      }else{
+        tb.innerHTML = items.map(mkRow).join('');
+      }
+      recalcChildCount();
+      applyFilter(); // 현재 검색어 유지
+    }
+
+    // ===== 상위 추가/수정/삭제 =====
+    $('#btnAddGroup')?.addEventListener('click', ()=>{
+      $('#groupModalLabel').textContent='상위 코드 추가';
+      $('#g_mode').value='create';
+      $('#g_id').value='';
+      $('#g_code').value='';
+      $('#g_name').value='';
+      $('#g_sort').value='0';
+      $('#g_use').value='Y';
+      groupModal.show();
+    });
+
+    $('#btnEditGroup')?.addEventListener('click', ()=>{
+      if(!currentGroup) return;
+      const row=$(`#tblGroups tr[data-id="${currentGroup.id}"]`);
+      $('#groupModalLabel').textContent='상위 코드 수정';
+      $('#g_mode').value='edit';
+      $('#g_id').value=currentGroup.id;
+      $('#g_code').value=currentGroup.code;
+      $('#g_name').value=currentGroup.name;
+      $('#g_sort').value=row?.dataset.sort || '0';
+      $('#g_use').value=row?.dataset.use || 'Y';
+      groupModal.show();
+    });
+
+    $('#groupForm')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const mode=$('#g_mode').value;
+      const payload={
+        code:$('#g_code').value.trim(),
+        codeName:$('#g_name').value.trim(),
+        sortOrder: +($('#g_sort').value||0),
+        useYn:$('#g_use').value,
+        delYn:'N'
+      };
+      try{
+        if(mode==='create'){
+          const created=await fetchJson(`${API_BASE}`,{method:'POST', body:JSON.stringify(payload)});
+          const tr=document.createElement('tr');
+          tr.className='row-click';
+          tr.dataset.id=created.id;
+          tr.dataset.code=created.code;
+          tr.dataset.name=created.codeName;
+          tr.dataset.sort=created.sortOrder ?? 0;
+          tr.dataset.use = created.useYn;
+          tr.innerHTML=`
+            <td>
+              <div class="d-flex flex-column">
+                <span class="cc-name">${created.codeName}</span>
+                <span class="cc-code">${created.code}</span>
+              </div>
+            </td>
+            <td class="text-end"><span class="badge ${created.useYn==='Y'?'bg-success-subtle text-success':'bg-secondary-subtle text-secondary'}">${created.useYn}</span></td>`;
+          $('#tblGroups').appendChild(tr);
+          showToast('상위 코드가 추가되었습니다.');
+          groupModal.hide();
+          // 방금 추가한 그룹을 곧바로 선택해서 사용자 흐름 자연스럽게
+          selectGroup(created.id);
+        }else{
+          const id=$('#g_id').value;
+          await fetch(`${API_BASE}/${id}`,{
+            method:'PATCH', headers:baseHdr, credentials:'same-origin',
+            body:JSON.stringify(payload)
+          });
+          const row=$(`#tblGroups tr[data-id="${id}"]`);
+          row.dataset.code=payload.code;
+          row.dataset.name=payload.codeName;
+          row.dataset.sort=payload.sortOrder ?? 0;
+          row.dataset.use = payload.useYn;
+          row.querySelector('.cc-name').innerText=payload.codeName;
+          row.querySelector('.cc-code').innerText=payload.code;
+          const badge=row.querySelector('.text-end .badge');
+          badge.innerText=payload.useYn;
+          badge.className = payload.useYn==='Y' ? 'badge bg-success-subtle text-success' : 'badge bg-secondary-subtle text-secondary';
+          if(currentGroup && currentGroup.id==+id){
+            currentGroup.code=payload.code; currentGroup.name=payload.codeName;
+            $('#selGroupName').innerText=currentGroup.name; $('#selGroupCode').innerText='('+currentGroup.code+')';
+          }
+          showToast('상위 코드가 수정되었습니다.');
+          groupModal.hide();
+        }
+      }catch(err){ showToast('오류가 발생했습니다.'); console.error(err); }
+    });
+
+    $('#btnDeleteGroup')?.addEventListener('click', ()=>{
+      if(!currentGroup) return;
+      confirmDelete('상위 코드를 삭제하시겠습니까? 하위 코드는 화면에서 보이지 않게 됩니다.', async ()=>{
+        try{
+          await fetch(`${API_BASE}/${currentGroup.id}`,{method:'DELETE', headers:baseHdr, credentials:'same-origin'});
+          $(`#tblGroups tr[data-id="${currentGroup.id}"]`)?.remove();
+          currentGroup=null;
+          $('#selGroupName').innerText='그룹 미선택'; $('#selGroupCode').innerText='';
+          $('#btnEditGroup').disabled=true; $('#btnDeleteGroup').disabled=true; $('#btnAddChild').disabled=true;
+          $('#tblChildren').innerHTML='<tr><td colspan="6" class="empty-state"><div class="icon">👈</div><br/>좌측에서 상위를 선택하세요.</td></tr>';
+          $('#childCount').textContent='0';
+          showToast('상위 코드가 삭제되었습니다.');
+        }catch(err){ showToast('오류가 발생했습니다.'); console.error(err); }
+      });
+    });
+
+    // ===== 하위 추가/수정/삭제 =====
+    $('#btnAddChild')?.addEventListener('click', ()=>{
+      if(!currentGroup) return;
+      $('#childModalLabel').textContent=`하위 코드 추가 — ${currentGroup.name}`;
+      $('#c_mode').value='create';
+      $('#c_id').value='';
+      $('#c_parent').value=currentGroup.id;
+      $('#c_code').value='';
+      $('#c_name').value='';
+      $('#c_sort').value='0';
+      $('#c_use').value='Y';
+      childModal.show();
+    });
+
+    function openChildEdit(id, code, name, useYn, sortOrder){
+      $('#childModalLabel').textContent=`하위 코드 수정 — ${currentGroup?.name||''}`;
+      $('#c_mode').value='edit';
+      $('#c_id').value=id;
+      $('#c_parent').value=currentGroup?.id||'';
+      $('#c_code').value=code||'';
+      $('#c_name').value=name||'';
+      $('#c_sort').value=sortOrder||0;
+      $('#c_use').value=useYn||'Y';
+      childModal.show();
+    }
+    window.openChildEdit = openChildEdit;
+
+    $('#childForm')?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const mode=$('#c_mode').value;
+      const payload={
+        code:$('#c_code').value.trim(),
+        codeName:$('#c_name').value.trim(),
+        sortOrder:+($('#c_sort').value||0),
+        useYn:$('#c_use').value,
+        delYn:'N',
+        parentId: +$('#c_parent').value
+      };
+      try{
+        if(mode==='create'){
+          const created=await fetchJson(`${API_BASE}`,{method:'POST', body:JSON.stringify(payload)});
+          const tb=$('#tblChildren');
+          if(tb.querySelector('td[colspan]')) tb.innerHTML='';
+          const tr=document.createElement('tr'); tr.dataset.id=created.id;
+          tr.innerHTML=`
+            <td class="fw-semibold">${created.code}</td>
+            <td><span class="cc-name">${created.codeName}</span></td>
+            <td style="max-width:110px"><input type="number" class="form-control form-control-sm" value="${created.sortOrder??0}"></td>
+            <td>
+              <select class="form-select form-select-sm">
+                <option value="Y" ${created.useYn==='Y'?'selected':''}>Y</option>
+                <option value="N" ${created.useYn==='N'?'selected':''}>N</option>
+              </select>
+            </td>
+            <td>${created.delYn==='N'?'표시':'숨김'}</td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" onclick="openChildEdit(${created.id}, '${(created.code||'').replace(/'/g,"&#39;")}', '${(created.codeName||'').replace(/'/g,"&#39;")}', '${created.useYn}', ${created.sortOrder??0})">수정</button>
+                <button class="btn btn-outline-secondary" onclick="saveChildQuick(${created.id}, this)">저장</button>
+                <button class="btn btn-outline-danger" onclick="confirmDelete('하위 코드를 삭제하시겠습니까?', ()=>delChild(${created.id}))">삭제</button>
+              </div>
+            </td>`;
+          tb.appendChild(tr);
+          recalcChildCount();
+          showToast('하위 코드가 추가되었습니다.');
+          childModal.hide();
+          applyFilter();
+        }else{
+          const id=$('#c_id').value;
+          await fetch(`${API_BASE}/${id}`,{
+            method:'PATCH', headers:baseHdr, credentials:'same-origin',
+            body:JSON.stringify(payload)
+          });
+          const row=$(`#tblChildren tr[data-id="${id}"]`);
+          row.children[0].innerText=payload.code;
+          row.children[1].querySelector('.cc-name').innerText=payload.codeName;
+          row.querySelector('input[type="number"]').value = payload.sortOrder;
+          row.querySelector('select').value = payload.useYn;
+          row.children[4].innerText = '표시';
+          showToast('하위 코드가 수정되었습니다.');
+          childModal.hide();
+          applyFilter();
+        }
+      }catch(err){ showToast('오류가 발생했습니다.'); console.error(err); }
+    });
+
+    async function saveChildQuick(id, btn){
+      const tr=btn.closest('tr');
+      const sort=tr.querySelector('input[type="number"]').value|0;
+      const use=tr.querySelector('select').value;
+      try{
+        await fetch(`${API_BASE}/${id}`,{
+          method:'PATCH', headers:baseHdr, credentials:'same-origin',
+          body:JSON.stringify({sortOrder:sort, useYn:use})
+        });
+        showToast('저장되었습니다.');
+      }catch(err){ showToast('오류가 발생했습니다.'); console.error(err); }
+    }
+    window.saveChildQuick = saveChildQuick;
+
+    async function delChild(id){
+      try{
+        await fetch(`${API_BASE}/${id}`,{method:'DELETE', headers:baseHdr, credentials:'same-origin'});
+        document.querySelector(`#tblChildren tr[data-id="${id}"]`)?.remove();
+        recalcChildCount();
+        if (document.querySelectorAll('#tblChildren tr').length===0) {
+          $('#tblChildren').innerHTML='<tr><td colspan="6" class="empty-state"><div class="icon">📭</div><br/>하위 코드가 없습니다.</td></tr>';
+        }
+        showToast('삭제되었습니다.');
+      }catch(err){ showToast('오류가 발생했습니다.'); console.error(err); }
+    }
+    window.delChild = delChild;
+
+    // ===== 삭제 확인 =====
+    function confirmDelete(text, onYes){
+      $('#confirmText').innerHTML=text;
+      $('#confirmYes').onclick = ()=>{ onYes?.(); confirmModal.hide(); };
+      confirmModal.show();
+    }
+    window.confirmDelete = confirmDelete;
+
+    // ===== 필터 =====
+    $('#filterInput')?.addEventListener('input', applyFilter);
+    function applyFilter(){
+      const q = ($('#filterInput').value||'').trim().toLowerCase();
+      const rows = $$('#tblChildren tr');
+      let visible=0, total=0;
+      rows.forEach(tr=>{
+        const isEmpty = tr.querySelector('td[colspan]');
+        if (isEmpty) return;
+        total++;
+        const code = tr.children[0].textContent.toLowerCase();
+        const name = tr.children[1].textContent.toLowerCase();
+        const show = !q || code.includes(q) || name.includes(q);
+        tr.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      const badge=$('#childFilterState');
+      if (q) { badge.hidden=false; badge.textContent=`필터: ${visible}/${total}`; }
+      else { badge.hidden=true; }
+    }
+
+    function recalcChildCount(){
+      const rows = $$('#tblChildren tr');
+      const count = Array.from(rows).filter(tr=>!tr.querySelector('td[colspan]')).length;
+      $('#childCount').textContent = count;
+    }
+
+    // ===== 초기 진입: 첫 상위코드 자동 선택 (있을 때) =====
+    (function init(){
+      $('#btnEditGroup').disabled=true; $('#btnDeleteGroup').disabled=true; $('#btnAddChild').disabled=true;
+      const first = $('#tblGroups tr[data-id]');
+      if (first) selectGroup(first.dataset.id);
+    })();
+  </script>
+
+  <!-- 아이콘 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</th:block>
+
+</body>
+</html>

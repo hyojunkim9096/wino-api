@@ -1,0 +1,38 @@
+/* ===== Common Code page styles (3:7 split, responsive) ===== */
+
+/* 레이아웃 */
+.pane{height:calc(100vh - 240px);overflow:auto;}
+.table-responsive{overflow-x:auto;}
+.card{border-radius:14px; overflow:hidden;}
+
+/* 3 : 7 좌우 고정 (lg 이상) */
+@media (min-width: 992px){
+  .col-left { flex: 0 0 auto; width: 30%; }
+  .col-right{ flex: 0 0 auto; width: 70%; }
+}
+/* xl에서 조금 더 안정감 */
+@media (min-width: 1200px){
+  .col-left { width: 30%; }
+  .col-right{ width: 70%; }
+}
+
+/* 테이블 룩 */
+.table thead th{font-weight:600; letter-spacing:.2px;}
+.table tbody td{vertical-align:middle;}
+.table tbody tr+tr{border-top:1px solid #eef2f7;}
+.table-hover tbody tr:hover{--bs-table-accent-bg:#f8fafc;}
+
+/* 행 선택/호버 */
+.row-click{cursor:pointer; transition: background-color .15s ease;}
+.row-click:hover{background:#f8fafc;}
+.row-click.active{background:#eef6ff;}
+
+/* 이름(굵게) + 코드(모노/옅게) */
+.cc-name{font-weight:700;}
+.cc-code{font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.82rem; color:#64748b;}
+
+/* 상태/빈뷰/필터 표시 */
+.badge-soft { background: #f1f5f9; color: #334155; }
+.empty-state { padding: 3rem 1rem; text-align: center; color: #6b7280; }
+.empty-state .icon { font-size: 2rem; display:inline-block; margin-bottom:.5rem; }
+.filter-badge{background:#eef2ff;color:#3730a3;border-radius:999px;padding:.2rem .6rem;}

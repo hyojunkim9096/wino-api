@@ -1,0 +1,80 @@
+/* =========================
+   WINO Auth 공통 스타일
+   ========================= */
+
+/* 스크롤바 생겨도 레이아웃 흔들리지 않게 */
+:root{ scrollbar-gutter: stable both-edges; }
+
+/* 인증/가입 레이아웃 공통: 전체 화면 중앙정렬 */
+body.auth-page{
+  min-height:100svh;
+  margin:0;
+  padding:24px;                 /* 작은 화면에서 카드가 모서리에 붙지 않게 */
+  display:grid;
+  place-items:center;           /* 가로/세로 완전 중앙 */
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+
+/* 배경 (로그인과 동일 이미지) */
+body.auth-bg{
+  background:
+    linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.55)),
+    url('/images/adminLoginBg.png') center/cover no-repeat fixed;
+}
+
+/* -------- 카드 베이스 -------- */
+.auth-card{
+  width:100%;
+  /* 기본 폭(로그인/코드입력 등) */
+  --auth-max: 520px;
+  max-width: var(--auth-max);
+  border:none; border-radius:1rem; overflow:hidden;
+  box-shadow:0 12px 28px rgba(0,0,0,.35);
+  backdrop-filter:saturate(140%) blur(4px);
+}
+.auth-card .card-header{ background:rgba(255,255,255,.92); border-bottom:none; }
+.auth-card .card-body  { background:rgba(255,255,255,.96); }
+
+.form-control,.input-group{ min-width:0; } /* 작은 화면 overflow 방지 */
+.feedback-slot{ min-height:1.25rem; }      /* 경고 영역 점프 방지 */
+.footer-copy{ color:#fff; opacity:.85; }
+
+/* 폭 모디파이어 */
+.auth-card--md   { --auth-max: 640px; }
+.auth-card--wide { --auth-max: 720px; }
+
+/* 큰 화면에서 더 시원하게 */
+@media (min-width: 1200px){
+  .auth-card--wide { --auth-max: 900px; }
+}
+@media (min-width: 1600px){
+  .auth-card--wide { --auth-max: 1040px; }
+}
+
+/* 버튼군 간격 유틸 */
+.auth-actions .btn + .btn { margin-left:.5rem; }
+
+/* =========================
+   카드 + 푸터를 한 덩어리로
+   ========================= */
+.auth-box{
+  width:100%;
+  /* 카드와 동일한 변수 기반 폭 사용 → 카드와 항상 같은 폭 */
+  --auth-max: 520px;
+  max-width: var(--auth-max);
+  display:grid;
+  justify-items:center;
+  row-gap:8px;                 /* 카드와 푸터 사이 간격(로그인처럼 타이트) */
+}
+/* 카드와 동일한 모디파이어 재사용 */
+.auth-box.auth-card--md   { --auth-max: 640px; }
+.auth-box.auth-card--wide { --auth-max: 720px; }
+@media (min-width: 1200px){
+  .auth-box.auth-card--wide { --auth-max: 900px; }
+}
+@media (min-width: 1600px){
+  .auth-box.auth-card--wide { --auth-max: 1040px; }
+}
+
+/* 바깥 푸터 타이트 여백(원하는 페이지에서만 사용) */
+.footer-tight{ margin-top:8px; margin-bottom:0; }

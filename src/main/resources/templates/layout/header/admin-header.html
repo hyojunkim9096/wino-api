@@ -1,10 +1,102 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<!-- templates/layout/header/admin-header.html -->
+<div xmlns:th="http://www.thymeleaf.org"
+     xmlns:sec="https://www.thymeleaf.org/extras/spring-security6"
+     th:fragment="adminHeader">
 
-</body>
-</html>
+    <header id="admin-header" class="navbar navbar-dark sticky-top shadow-sm px-3">
+        <!-- 좌측: 토글 + 브랜드 -->
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-light btn-sm" id="btnSidebarToggle" aria-label="사이드바 토글">≡</button>
+            <a class="navbar-brand fw-semibold ms-1 brand" href="/admin/board/adminMainBoard">WINO Admin</a>
+        </div>
+
+        <!-- 중간: 검색 -->
+        <form class="admin-search d-none d-lg-flex ms-3" role="search" onsubmit="return false;">
+            <input class="form-control form-control-sm" type="search" placeholder="검색…" aria-label="Search">
+        </form>
+
+        <!-- 우측 -->
+        <div class="ms-auto header-right no-wrap d-flex align-items-center gap-3">
+            <div class="d-none d-md-inline-flex align-items-center">
+                <span class="text-white-50 small me-2">세션 만료까지</span>
+                <span id="session-countdown" class="badge bg-warning text-dark px-2" aria-live="polite">--:--</span>
+            </div>
+
+            <div class="dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+                   href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown">
+          <span class="rounded-circle bg-secondary text-white d-inline-flex justify-content-center align-items-center"
+                style="width:28px;height:28px;"
+                sec:authorize="isAuthenticated()"
+                th:text="${#strings.toUpperCase(#strings.substring(#authentication.name,0,1))}">A</span>
+                    <span class="d-none d-sm-inline small" sec:authorize="isAuthenticated()" th:text="${#authentication.name}">admin</span>
+                    <span class="d-none d-sm-inline small" sec:authorize="!isAuthenticated()">admin</span>
+                </a>
+
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                    <li><a class="dropdown-item" href="/admin/mypage">내 정보</a></li>
+                    <li><a class="dropdown-item" href="/admin/settings">설정</a></li>
+                    <li><hr class="dropdown-divider"></li>
+
+                    <!-- [변경 포인트]
+                         기존: <a href="/admin/logout" ...> (GET 시도)  → CSRF 때문에 403/405
+                         변경: POST 폼 + CSRF hidden input 로 안전하게 로그아웃 -->
+                    <li>
+                        <form th:action="@{/admin/logout}" method="post" class="px-3 py-0 m-0">
+                            <!-- Spring Security가 모델에 제공하는 CSRF 토큰 -->
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <!-- 버튼은 드롭다운 아이템처럼 보이도록 클래스 지정 -->
+                            <button type="submit" class="dropdown-item px-0">
+                                로그아웃
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- 세션 경고 모달 -->
+    <div class="modal fade" id="sessionWarnModal" tabindex="-1" aria-labelledby="sessionWarnLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sessionWarnLabel">자동 로그아웃 안내</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">활동이 없어 <strong>2분 후</strong> 자동 로그아웃됩니다.</p>
+                    <small class="text-muted">작업을 계속하시려면 클릭/타이핑/스크롤 등의 활동을 해주세요.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary btn-sm" id="staySignedInBtn">계속 작업하기</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 헤더 스크립트 -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+          // 세션 타이머 초기화 (자동 로그아웃은 JS에서 fetch POST를 사용한다고 가정)
+          if (window.AdminSessionTimer && typeof window.AdminSessionTimer.init === 'function') {
+            AdminSessionTimer.init({
+              infoUrl:   '/admin/api/session/info',
+              extendUrl: '/admin/api/session/extend',
+              logoutUrl: '/admin/logout',   // 자동 로그아웃은 JS에서 POST + CSRF 헤더로 호출해야 함
+              warnMinutes: 2,
+              displayEl: document.getElementById('session-countdown'),
+              warnModalEl: document.getElementById('sessionWarnModal'),
+              stayBtnEl: document.getElementById('staySignedInBtn'),
+            });
+          }
+
+          // 사이드바 토글
+          const root = document.getElementById('admin-layout') || document.body;
+          document.getElementById('btnSidebarToggle')?.addEventListener('click', () => {
+            root.classList.toggle('sidebar-collapsed');
+          });
+        });
+    </script>
+</div>

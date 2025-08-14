@@ -1,0 +1,42 @@
+/* ----- COLOR THEME (검은파란쪽) ----- */
+:root{
+  --admin-bg-dark:#0d1b2a;   /* 거의 검정에 가까운 남색 */
+  --admin-bg:#1b263b;        /* 진한 남색 */
+  --admin-accent:#3a506b;    /* 파란 계열 악센트 */
+  --admin-accent-2:#5bc0be;  /* 포인트(밝은 청록) */
+  --admin-border:#24324a;
+}
+
+/* 헤더(상단 네비) */
+#admin-header{
+  background-color:var(--admin-bg-dark)!important;
+  border-bottom:1px solid var(--admin-border);
+  backdrop-filter:saturate(140%) blur(4px);
+}
+
+/* 레이아웃 */
+.admin-left-menu{
+  width:240px; min-height:calc(100vh - 56px);
+  background:linear-gradient(180deg, var(--admin-bg-dark), var(--admin-bg));
+  color:#cfd8e3;
+}
+.admin-left-menu .brand{
+  font-weight:700; letter-spacing:.2px; color:#e9eef6;
+}
+.admin-left-menu .nav-link{
+  color:#cfd8e3; border-radius:.5rem; margin:.15rem .5rem; padding:.5rem .75rem;
+}
+.admin-left-menu .nav-link:hover{
+  background-color:rgba(91,192,190,.12); color:#ffffff;
+}
+.admin-left-menu .nav-link.active{
+  background-color:var(--admin-accent); color:#fff;
+}
+
+/* 본문 */
+.admin-content{ background:#f7f9fc; }
+
+/* 사이드바 접힘 상태 */
+.sidebar-collapsed .admin-left-menu{ width:72px !important; }
+.sidebar-collapsed .admin-left-menu .menu-text,
+.sidebar-collapsed .admin-left-menu .brand .brand-text{ display:none; }

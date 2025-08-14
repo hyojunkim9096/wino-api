@@ -20,27 +20,29 @@ public class AdminSignupController {
     private final AdminUserAuthService authService;
 
     /**
-     * GET  /admin/sign/adminSignup
+     * GET  /admin/sign/singUp
      * 신규등록 폼 표시
      */
-    @GetMapping("/signup")
-    public String showSignupForm(Model model) {
-        model.addAttribute("adminSignupDto", new AdminSignupDto());
-        return "admin/sign/adminSignup";
+    @GetMapping("/signUp")
+    public String signupForm(Model model) {
+        if (!model.containsAttribute("adminSignupDto")) {
+            model.addAttribute("adminSignupDto", new AdminSignupDto());
+        }
+        return "admin/sign/adminSignUp";
     }
 
     /**
-     * POST /admin/sign/adminSignup
+     * POST /admin/sign/singUp
      * 폼에서 입력된 값으로 관리자 계정 생성
      */
-    @PostMapping("/signup")
+    @PostMapping("/signUp")
     public String signup(
             @Valid @ModelAttribute("adminSignupDto") AdminSignupDto dto,
             BindingResult binding,
             Model model
     ) {
         if (binding.hasErrors()) {
-            return "admin/sign/adminSignup";
+            return "admin/sign/adminSignUp";
         }
         authService.register(dto, "system");  // 실제 운영 시에는 인증된 관리자 ID를 넣어주세요
         return "redirect:/admin/login?registered";
